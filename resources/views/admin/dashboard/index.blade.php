@@ -233,13 +233,13 @@
         <div class="stat-label">KPIs cần chú ý</div>
     </div>
 
-    <div class="stat-card average-progress">
+    <!-- <div class="stat-card average-progress">
         <div class="stat-icon average-progress">
             <i class="fas fa-chart-bar"></i>
         </div>
         <div class="stat-number">{{ $stats['average_progress'] }}%</div>
         <div class="stat-label">Tiến độ trung bình</div>
-    </div>
+    </div> -->
 </div>
 
 <!-- Biểu đồ thống kê -->

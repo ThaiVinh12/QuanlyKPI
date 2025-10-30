@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
+use App\Models\PhancongKpi;
 use App\Models\Tasks;
 use App\Models\DulieuTask;
 use App\Models\Thongbao;
@@ -135,10 +136,10 @@ class TasksController extends Controller
         // Thông báo cho manager về bài nộp nhiệm vụ
         Thongbao::create([
             'ID_nguoigui' => $userId,
-            'ID_nguoinhan' => $phancongKpi->ID_nguoi_phan_cong,
+            'ID_nguoinhan' => $task->ID_nguoi_phan_cong,
             'Tieu_de' => 'Nộp bài nhiệm vụ',
-            'Noi_dung' => "Nhân viên đã nộp bài cho nhiệm vụ: '{$task->kpi->Ten_kpi}'. Vui lòng kiểm tra và đánh giá.",
-            'Loai_thongbao' => 'submit_kpi',
+            'Noi_dung' => "Nhân viên đã nộp bài cho nhiệm vụ: '{$task->Ten_task}'. Vui lòng kiểm tra và đánh giá.",
+            'Loai_thongbao' => 'submit_task',
             'Da_xem' => 0
         ]);
 
@@ -160,7 +161,7 @@ class TasksController extends Controller
                         'managerName' => $manager->Ho_ten,
                         'userName' => $currentUser->Ho_ten,
                         'taskName' => $task->Ten_task,
-                        'submitDate' => now()->format('d/m/Y H:i'),
+                        'submitDate' => now()->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
                         'evidenceText' => $request->minh_chung,
                         'hasFile' => $request->hasFile('file'),
                         'loginUrl' => url('/login')
@@ -192,7 +193,9 @@ class TasksController extends Controller
         }])->whereHas('users', function($q) use ($userId) {
             $q->where('ID_user', $userId);
         })->findOrFail($id);
-
+        // Lấy tên người phân công
+        $phancongtask = Tasks::with('nguoiPhanCong')
+              ->findOrFail($id);
         // Lấy tất cả bài nộp của user cho task này
         $submissions = DulieuTask::where('task_id', $id)
             ->where('user_id', $userId)
@@ -205,6 +208,7 @@ class TasksController extends Controller
         return response()->json([
             'success' => true,
             'task' => $task,
+            'phancongtask' => $phancongtask,
             'submissions' => $submissions,
             'pivot' => $pivot
         ]);

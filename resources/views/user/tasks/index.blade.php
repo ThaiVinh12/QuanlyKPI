@@ -216,6 +216,8 @@
                                 Chưa bắt đầu
                             @elseif($task->user_status == 'dang_thuc_hien')
                                 Đang thực hiện
+                            @elseif($task->user_status == 'qua_han')
+                                Quá hạn
                             @else
                                 Hoàn thành
                             @endif
@@ -230,6 +232,10 @@
                         @if($task->user_status == 'hoan_thanh')
                             <button class="btn btn-success btn-sm" disabled>
                                 <i class="fas fa-check-circle me-1"></i> Đã hoàn thành
+                            </button>
+                        @elseif($task->user_status == 'qua_han')
+                        <button class="btn btn-success btn-sm" disabled>
+                                <i class="fas fa-check-circle me-1"></i> Đã quá hạn
                             </button>
                         @else
                             <button class="btn btn-primary btn-sm" onclick="openSubmitModal({{ $task->ID_task }}, '{{ $task->Ten_task }}')">
@@ -366,7 +372,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    displayTaskDetail(data.task, data.submissions, data.pivot);
+                    displayTaskDetail(data.task, data.submissions, data.pivot, data.phancongtask);
                 } else {
                     showAlert('Không thể tải thông tin nhiệm vụ', 'error');
                 }
@@ -376,7 +382,7 @@
             });
     }
 
-    function displayTaskDetail(task, submissions, pivot) {
+    function displayTaskDetail(task, submissions, pivot, phancongtask) {
         const content = document.getElementById('taskDetailContent');
         const createdDate = new Date(task.Ngay_giao).toLocaleDateString('vi-VN');
         const deadlineDate = task.Ngay_het_han ? new Date(task.Ngay_het_han).toLocaleDateString('vi-VN') : 'Không có';
@@ -390,6 +396,10 @@
                         <div class="col-md-6">
                             <p class="mb-2"><strong><i class="fas fa-align-left me-2"></i>Mô tả:</strong></p>
                             <p class="text-muted">${task.Mo_ta || 'Không có mô tả'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong><i class="fas fa-align-left me-2"></i>Người phân công:</strong></p>
+                            <p class="text-muted">${phancongtask.nguoi_phan_cong.Ho_ten || 'Không có mô tả'}</p>
                         </div>
                         <div class="col-md-6">
                             <p class="mb-2"><strong><i class="fas fa-info-circle me-2"></i>Trạng thái:</strong></p>
@@ -412,7 +422,7 @@
 
                     ${pivot && pivot.comment ? `
                         <div class="alert alert-warning mt-3">
-                            <strong><i class="fas fa-comment me-2"></i>Phản hồi từ quản lý:</strong>
+                            <strong><i class="fas fa-comment me-2"></i>Phản hồi từ người phân công:</strong>
                             <p class="mb-0 mt-2">${pivot.comment}</p>
                         </div>
                     ` : ''}

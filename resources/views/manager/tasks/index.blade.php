@@ -383,6 +383,8 @@
                                                     Chưa bắt đầu
                                                 @elseif($user->pivot->trang_thai == 'dang_thuc_hien')
                                                     Đang làm
+                                                @elseif($user->pivot->trang_thai == 'qua_han')
+                                                    Quá hạn
                                                 @else
                                                     Hoàn thành
                                                 @endif
@@ -681,11 +683,21 @@
             method: method,
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify(requestData)
         })
-        .then(response => response.json())
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('text/html')) {
+                return response.text().then(html => {
+                    console.error('HTML Response:', html);
+                    throw new Error('Server returned HTML instead of JSON');
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 showAlert(data.message, 'success');
@@ -695,12 +707,18 @@
                     location.reload();
                 }, 1500);
             } else {
-                showAlert(data.message, 'danger');
+                // Handle validation errors
+                if (data.errors) {
+                    const errorMessages = Object.values(data.errors).flat().join('<br>');
+                    showAlert(errorMessages || data.message, 'danger');
+                } else {
+                    showAlert(data.message || 'Có lỗi xảy ra!', 'danger');
+                }
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('Có lỗi xảy ra!', 'danger');
+            showAlert('Có lỗi xảy ra: ' + error.message, 'danger');
         });
     });
 

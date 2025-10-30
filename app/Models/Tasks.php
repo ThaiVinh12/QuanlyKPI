@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use App\Models\User;
 class Tasks extends Model
 {
     use HasFactory;
@@ -16,6 +16,7 @@ class Tasks extends Model
 
     protected $fillable = [
         'Ten_task',
+        'ID_nguoi_phan_cong',
         'Mo_ta',
         'Ngay_giao',
         'Ngay_het_han'
@@ -36,5 +37,9 @@ class Tasks extends Model
     public function submissions()
     {
         return $this->hasMany(DulieuTask::class, 'task_id', 'ID_task');
+    }
+    public function nguoiPhanCong()
+    {
+        return $this->belongsTo(User::class, 'ID_nguoi_phan_cong', 'ID_user');
     }
 }

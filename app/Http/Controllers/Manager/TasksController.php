@@ -12,6 +12,7 @@ use App\Models\Tasks;
 use App\Models\User;
 use App\Models\DulieuTask;
 use App\Models\Thongbao;
+use App\Models\Nhatky;
 
 class TasksController extends Controller
 {
@@ -32,12 +33,17 @@ class TasksController extends Controller
         $status = $request->get('status');
 
         $query = Tasks::with('users');
+        $managerId = Auth::id();
+        $query->where('ID_nguoi_phan_cong', $managerId)
+      ->orderBy('ID_task', 'desc');
+        if ($status) {
 
-        // Lọc theo trạng thái - bây giờ không thể lọc vì trạng thái theo từng user
-        // if ($status) {
-        //     $query->where('Trang_thai', $status);
-        // }
+            $query->whereHas('users', function($q) use ($status, $managerId) {
 
+                $q->where('Trang_thai', $status);
+
+            });
+        }
         // Tìm kiếm theo tên task hoặc người được giao
         if ($search) {
             $query->where(function($q) use ($search) {
@@ -61,20 +67,32 @@ class TasksController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'Ten_task' => 'required|string|max:255',
-            'Mo_ta' => 'nullable|string',
-            'user_ids' => 'required|array|min:1',
-            'user_ids.*' => 'exists:users,ID_user',
-            'Ngay_het_han' => 'nullable|date|after:today'
-        ], [
-            'user_ids.required' => 'Vui lòng chọn ít nhất 1 người được giao',
-            'user_ids.min' => 'Vui lòng chọn ít nhất 1 người được giao'
-        ]);
+        try {
+            $request->validate([
+                'Ten_task' => 'required|string|max:255',
+                'Mo_ta' => 'nullable|string',
+                'user_ids' => 'required|array|min:1',
+                'user_ids.*' => 'exists:users,ID_user',
+                'Ngay_het_han' => 'nullable|date'
+            ], [
+                'Ten_task.required' => 'Vui lòng nhập tên nhiệm vụ',
+                'user_ids.required' => 'Vui lòng chọn ít nhất 1 người được giao',
+                'user_ids.min' => 'Vui lòng chọn ít nhất 1 người được giao',
+                'user_ids.*.exists' => 'Người dùng không hợp lệ',
+                'Ngay_het_han.date' => 'Ngày hết hạn không hợp lệ'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dữ liệu không hợp lệ',
+                'errors' => $e->errors()
+            ], 422);
+        }
 
         // Tạo task
         $task = Tasks::create([
             'Ten_task' => $request->Ten_task,
+            'ID_nguoi_phan_cong' => Auth::id(),
             'Mo_ta' => $request->Mo_ta,
             'Ngay_het_han' => $request->Ngay_het_han
         ]);
@@ -102,6 +120,14 @@ class TasksController extends Controller
                 'Da_xem' => 0
             ]);
 
+            // Ghi nhật ký
+            Nhatky::create([
+                'ID_nguoithuchien' => Auth::id(),
+                'Doi_tuong' => 'user',
+                'ID_doi_tuong' => $userId,
+                'Hanh_dong' => 'phan cong task'
+            ]);
+
             // Gửi email
             if ($user && $user->Email) {
                 try {
@@ -110,7 +136,7 @@ class TasksController extends Controller
                         'managerName' => $manager->Ho_ten,
                         'taskName' => $request->Ten_task,
                         'taskDescription' => $request->Mo_ta,
-                        'dateAssigned' => now()->format('d/m/Y H:i'),
+                        'dateAssigned' => now()->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
                         'deadline' => $request->Ngay_het_han ? \Carbon\Carbon::parse($request->Ngay_het_han)->format('d/m/Y') : null,
                         'loginUrl' => url('/login')
                     ];
@@ -139,16 +165,27 @@ class TasksController extends Controller
     {
         $task = Tasks::findOrFail($id);
 
-        $request->validate([
-            'Ten_task' => 'required|string|max:255',
-            'Mo_ta' => 'nullable|string',
-            'user_ids' => 'required|array|min:1',
-            'user_ids.*' => 'exists:users,ID_user',
-            'Ngay_het_han' => 'nullable|date'
-        ], [
-            'user_ids.required' => 'Vui lòng chọn ít nhất 1 người được giao',
-            'user_ids.min' => 'Vui lòng chọn ít nhất 1 người được giao'
-        ]);
+        try {
+            $request->validate([
+                'Ten_task' => 'required|string|max:255',
+                'Mo_ta' => 'nullable|string',
+                'user_ids' => 'required|array|min:1',
+                'user_ids.*' => 'exists:users,ID_user',
+                'Ngay_het_han' => 'nullable|date'
+            ], [
+                'Ten_task.required' => 'Vui lòng nhập tên nhiệm vụ',
+                'user_ids.required' => 'Vui lòng chọn ít nhất 1 người được giao',
+                'user_ids.min' => 'Vui lòng chọn ít nhất 1 người được giao',
+                'user_ids.*.exists' => 'Người dùng không hợp lệ',
+                'Ngay_het_han.date' => 'Ngày hết hạn không hợp lệ'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dữ liệu không hợp lệ',
+                'errors' => $e->errors()
+            ], 422);
+        }
 
         $oldUserIds = $task->users->pluck('ID_user')->toArray();
         $newUserIds = $request->user_ids;
@@ -208,7 +245,7 @@ class TasksController extends Controller
                         'managerName' => $manager->Ho_ten,
                         'taskName' => $request->Ten_task,
                         'taskDescription' => $request->Mo_ta,
-                        'dateAssigned' => now()->format('d/m/Y H:i'),
+                        'dateAssigned' => now()->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
                         'deadline' => $request->Ngay_het_han ? \Carbon\Carbon::parse($request->Ngay_het_han)->format('d/m/Y') : null,
                         'loginUrl' => url('/login')
                     ];

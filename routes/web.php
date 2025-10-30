@@ -61,6 +61,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
         Route::resource('kpi', KpiController::class);
         Route::resource('loaikpi', LoaiKpiController::class);
+        Route::get('/task', [\App\Http\Controllers\TaskController::class, 'index'])->name('task.index');
         Route::resource('users', UserController::class);
         Route::resource('phongban', PhongbanController::class);
         Route::get('/reports', [ReportsController::class, 'index'])->name('reports.index');

@@ -1,8 +1,8 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Danh sách KPI')
-@section('page-title', 'Quản lý KPIs')
-@section('search-placeholder', 'Tìm KPI, nhiệm vụ...')
+@section('title', 'Danh sách Tasks')
+@section('page-title', 'Quản lý Tasks')
+@section('search-placeholder', 'Tìm task, người thực hiện...')
 
 @push('styles')
 <style>
@@ -85,24 +85,6 @@
         width: 200px;
     }
 
-    .btn-add {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 10px 20px;
-        font-size: 14px;
-        font-weight: 500;
-        text-decoration: none;
-        transition: all 0.3s ease;
-    }
-
-    .btn-add:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        color: white;
-    }
-
     .table {
         margin-bottom: 0;
     }
@@ -131,33 +113,6 @@
         background: #f8f9fa;
     }
 
-    .priority-badge {
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 500;
-    }
-
-    .priority-rat-gap {
-        background: #dc3545;
-        color: white;
-    }
-
-    .priority-gap {
-        background: #fd7e14;
-        color: white;
-    }
-
-    .priority-trung-binh {
-        background: #ffc107;
-        color: #212529;
-    }
-
-    .priority-khong {
-        background: #6c757d;
-        color: white;
-    }
-
     .status-badge {
         padding: 4px 8px;
         border-radius: 12px;
@@ -165,52 +120,19 @@
         font-weight: 500;
     }
 
-    .status-chua-thuc-hien {
+    .status-chua_bat_dau {
         background: #6c757d;
         color: white;
     }
 
-    .status-dang-thuc-hien {
+    .status-dang_thuc_hien {
         background: #17a2b8;
         color: white;
     }
 
-    .status-hoan-thanh {
+    .status-hoan_thanh {
         background: #28a745;
         color: white;
-    }
-
-    .status-qua-han {
-        background: #dc3545;
-        color: white;
-    }
-
-    .action-buttons {
-        display: flex;
-        gap: 5px;
-    }
-
-    .btn-action {
-        padding: 5px 10px;
-        border: none;
-        border-radius: 5px;
-        font-size: 12px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .btn-edit {
-        background: #17a2b8;
-        color: white;
-    }
-
-    .btn-delete {
-        background: #dc3545;
-        color: white;
-    }
-
-    .btn-action:hover {
-        opacity: 0.8;
     }
 
     .pagination-info {
@@ -244,6 +166,20 @@
         height: 14px !important;
         display: inline-block !important;
         vertical-align: middle !important;
+    }
+
+    .users-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .user-badge {
+        padding: 4px 8px;
+        background: #e9ecef;
+        border-radius: 12px;
+        font-size: 12px;
+        color: #495057;
     }
     .stat-number {
         font-size: 42px;
@@ -289,44 +225,43 @@
         font-size: 24px;
         color: white;
     }
-
 </style>
 @endpush
 
 @section('content')
-<!-- Biểu đồ KPI tạo mới theo tháng -->
+<!-- Biểu đồ Tasks tạo mới theo tháng -->
 <div class="row">
     <div class="col-md-6">
         <div class="chart-container">
             <h3 class="chart-title">
                 <i class="fas fa-chart-line"></i>
-                KPI tạo mới theo tháng
+                Tasks tạo mới theo tháng
             </h3>
-            <canvas id="kpiByMonthChart" width="400" height="200"></canvas>
+            <canvas id="taskByMonthChart" width="400" height="200"></canvas>
         </div>
         <div class="stat-card">
             <div class="stat-icon kpi">
                 <i class="fas fa-chart-line"></i>
             </div>
-            <div class="stat-number">{{ \App\Models\Kpi::count() }}</div>
-            <div class="stat-label">Tổng số KPI</div>
+            <div class="stat-number">{{ \App\Models\Tasks::count() }}</div>
+            <div class="stat-label">Tổng số nhiệm vụ</div>
         </div>
     </div>
     <div class="col-md-6">
         <div class="chart-container">
             <h3 class="chart-title">
                 <i class="fas fa-chart-pie"></i>
-                KPI theo loại
+                Tasks theo trạng thái
             </h3>
-            <canvas id="kpiByTypeChart" width="400" height="200"></canvas>
+            <canvas id="taskByStatusChart" width="400" height="200"></canvas>
         </div>
     </div>
 </div>
 
-<!-- Danh sách phân công KPI -->
+<!-- Danh sách Tasks -->
 <div class="table-container">
     <div class="table-header">
-        <h2 class="table-title">Danh sách KPI</h2>
+        <h2 class="table-title">Danh sách Tasks</h2>
         <div class="controls">
             <div class="per-page-select">
                 <span>Xem</span>
@@ -342,19 +277,18 @@
             <div class="search-box">
                 <span>Tìm kiếm:</span>
                 <form method="GET" style="display: flex; gap: 10px;">
-                    <input type="text" name="search" value="{{ $search }}" placeholder="Tìm theo tên KPI, người thực hiện...">
+                    <input type="text" name="search" value="{{ $search }}" placeholder="Tìm theo tên task, mô tả...">
                     <input type="hidden" name="per_page" value="{{ $perPage }}">
                     <button type="submit" class="btn btn-primary btn-sm">
                         <i class="fas fa-search"></i>
                     </button>
                     @if($search)
-                        <a href="{{ route('kpi.index') }}" class="btn btn-secondary btn-sm">
+                        <a href="{{ route('task.index') }}" class="btn btn-secondary btn-sm">
                             <i class="fas fa-times"></i>
                         </a>
                     @endif
                 </form>
             </div>
-
         </div>
     </div>
 
@@ -366,55 +300,75 @@
                         <i class="fas fa-sort"></i> STT
                     </th>
                     <th>
-                        <i class="fas fa-sort"></i> Tên KPI
+                        <i class="fas fa-sort"></i> Tên Task
                     </th>
                     <th>
-                        <i class="fas fa-sort"></i> Chỉ tiêu
-                    </th>
-                    <th>
-                        <i class="fas fa-sort"></i> Đơn vị
-                    </th>
-                    <th>
-                        <i class="fas fa-sort"></i> Độ ưu tiên
+                        <i class="fas fa-sort"></i> Mô tả
                     </th>
                     <th>
                         <i class="fas fa-sort"></i> Người thực hiện
                     </th>
                     <th>
-                        <i class="fas fa-sort"></i> Phòng ban
-                    </th>
-                    <th>
                         <i class="fas fa-sort"></i> Trạng thái
                     </th>
                     <th>
-                        <i class="fas fa-sort"></i> Ngày tạo
+                        <i class="fas fa-sort"></i> Ngày giao
+                    </th>
+                    <th>
+                        <i class="fas fa-sort"></i> Ngày hết hạn
                     </th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($phancongKpis as $index => $phancong)
+                @forelse($tasks as $index => $task)
                     <tr>
-                        <td>{{ $phancongKpis->firstItem() + $index }}</td>
-                        <td>{{ $phancong->kpi->Ten_kpi }}</td>
-                        <td>{{ number_format($phancong->kpi->Chi_tieu) }}</td>
-                        <td>{{ $phancong->kpi->Donvi_tinh }}</td>
+                        <td>{{ $tasks->firstItem() + $index }}</td>
+                        <td>{{ $task->Ten_task }}</td>
+                        <td>{{ Str::limit($task->Mo_ta ?? 'Không có mô tả', 50) }}</td>
                         <td>
-                            <span class="priority-badge priority-{{ strtolower(str_replace(' ', '-', $phancong->kpi->Do_uu_tien)) }}">
-                                {{ $phancong->kpi->Do_uu_tien }}
-                            </span>
+                            <div class="users-list">
+                                @foreach($task->users as $user)
+                                    <span class="user-badge">{{ $user->Ho_ten }}</span>
+                                @endforeach
+                                @if($task->users->count() == 0)
+                                    <span class="text-muted">Chưa phân công</span>
+                                @endif
+                            </div>
                         </td>
-                        <td>{{ $phancong->user->Ho_ten ?? 'Chưa phân công' }}</td>
-                        <td>{{ $phancong->phongban->Ten_phongban ?? 'Chưa phân phòng ban' }}</td>
                         <td>
-                            <span class="status-badge status-{{ $phancong->Trang_thai }}">
-                                {{ ucfirst(str_replace('_', ' ', $phancong->Trang_thai)) }}
+                            @php
+                                $statusCounts = $task->users->groupBy('pivot.trang_thai')->map->count();
+                                $totalUsers = $task->users->count();
+                                $completed = $statusCounts->get('hoan_thanh', 0);
+                                $inProgress = $statusCounts->get('dang_thuc_hien', 0);
+                                $notStarted = $statusCounts->get('chua_bat_dau', 0);
+
+                                // Xác định trạng thái chung
+                                if ($totalUsers == 0) {
+                                    $mainStatus = 'chua_bat_dau';
+                                } elseif ($completed == $totalUsers) {
+                                    $mainStatus = 'hoan_thanh';
+                                } elseif ($inProgress > 0) {
+                                    $mainStatus = 'dang_thuc_hien';
+                                } else {
+                                    $mainStatus = 'chua_bat_dau';
+                                }
+                            @endphp
+                            <span class="status-badge status-{{ $mainStatus }}">
+                                {{ ucfirst(str_replace('_', ' ', $mainStatus)) }}
                             </span>
+                            @if($totalUsers > 0)
+                                <br><small class="text-muted">
+                                    ({{ $completed }}/{{ $totalUsers }} hoàn thành)
+                                </small>
+                            @endif
                         </td>
-                        <td>{{ $phancong->kpi->Ngay_tao->format('d/m/Y H:i:s') }}</td>
+                        <td>{{ $task->Ngay_giao ? $task->Ngay_giao->format('d/m/Y H:i') : 'N/A' }}</td>
+                        <td>{{ $task->Ngay_het_han ? $task->Ngay_het_han->format('d/m/Y') : 'N/A' }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10" class="text-center py-4">
+                        <td colspan="7" class="text-center py-4">
                             <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                             <p class="text-muted">Không có dữ liệu</p>
                         </td>
@@ -427,41 +381,35 @@
     <!-- Pagination -->
     <div class="d-flex justify-content-between align-items-center mt-3">
         <div class="pagination-info">
-            Đang xem {{ $phancongKpis->firstItem() ?? 0 }} đến {{ $phancongKpis->lastItem() ?? 0 }}
-            trong tổng số {{ $phancongKpis->total() }} mục
+            Đang xem {{ $tasks->firstItem() ?? 0 }} đến {{ $tasks->lastItem() ?? 0 }}
+            trong tổng số {{ $tasks->total() }} mục
         </div>
         <div>
-            {{ $phancongKpis->appends(request()->query())->links() }}
+            {{ $tasks->appends(request()->query())->links() }}
         </div>
     </div>
 </div>
-
-<!-- Form xóa ẩn -->
-<form id="deleteForm" method="POST" style="display: none;">
-    @csrf
-    @method('DELETE')
-</form>
 @endsection
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Biểu đồ KPI theo tháng
-    const kpiByMonthData = @json($kpiByMonth);
+    // Biểu đồ Tasks theo tháng
+    const taskByMonthData = @json($taskByMonth);
     const monthLabels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
     const monthData = new Array(12).fill(0);
 
-    kpiByMonthData.forEach(item => {
+    taskByMonthData.forEach(item => {
         monthData[item.month - 1] = item.count;
     });
 
-    const monthCtx = document.getElementById('kpiByMonthChart').getContext('2d');
+    const monthCtx = document.getElementById('taskByMonthChart').getContext('2d');
     new Chart(monthCtx, {
         type: 'line',
         data: {
             labels: monthLabels,
             datasets: [{
-                label: 'Số KPI tạo mới',
+                label: 'Số Tasks tạo mới',
                 data: monthData,
                 borderColor: '#667eea',
                 backgroundColor: 'rgba(102, 126, 234, 0.1)',
@@ -488,20 +436,27 @@
         }
     });
 
-    // Biểu đồ KPI theo loại
-    const kpiByTypeData = @json($kpiByType);
-    const typeLabels = kpiByTypeData.map(item => item.Ten_loai_kpi);
-    const typeCounts = kpiByTypeData.map(item => item.count);
-    const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe'];
+    // Biểu đồ Tasks theo trạng thái
+    const taskByStatusData = @json($taskByStatus);
+    const statusLabels = taskByStatusData.map(item => {
+        const labels = {
+            'chua_bat_dau': 'Chưa bắt đầu',
+            'dang_thuc_hien': 'Đang thực hiện',
+            'hoan_thanh': 'Hoàn thành'
+        };
+        return labels[item.trang_thai] || item.trang_thai;
+    });
+    const statusCounts = taskByStatusData.map(item => item.count);
+    const colors = ['#6c757d', '#17a2b8', '#28a745'];
 
-    const typeCtx = document.getElementById('kpiByTypeChart').getContext('2d');
-    new Chart(typeCtx, {
+    const statusCtx = document.getElementById('taskByStatusChart').getContext('2d');
+    new Chart(statusCtx, {
         type: 'doughnut',
         data: {
-            labels: typeLabels,
+            labels: statusLabels,
             datasets: [{
-                data: typeCounts,
-                backgroundColor: colors.slice(0, typeLabels.length),
+                data: statusCounts,
+                backgroundColor: colors.slice(0, statusLabels.length),
                 borderWidth: 0
             }]
         },
@@ -520,13 +475,6 @@
         url.searchParams.set('per_page', value);
         window.location.href = url.toString();
     }
-
-    function deleteKpi(id) {
-        if (confirm('Bạn có chắc chắn muốn xóa KPI này?')) {
-            const form = document.getElementById('deleteForm');
-            form.action = `/kpi/${id}`;
-            form.submit();
-        }
-    }
 </script>
 @endpush
+

@@ -111,7 +111,6 @@ class KpiController extends Controller
         $phancongKpi = PhancongKpi::with(['kpi', 'danhgiaKpi', 'loaiKpi', 'nguoiPhanCong', 'phongban'])
             ->where('ID_user', $userId)
             ->findOrFail($id);
-
         $submissions = DulieuKpi::where('ID_phancong', $id)
             ->where('ID_nguoigui', $userId)
             ->orderBy('Ngay_gui', 'desc')
